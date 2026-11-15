@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
@@ -26,20 +28,19 @@ jobs:
           JEKYLL_ENV: production
       - name: Check built pages
         run: |
-          echo "Publication links on publications page:"
-          grep -o 'class="archive__item-title"' _site/publications/index.html | wc -l
-          echo "About page personal details:"
+          echo "Publication entries: $(grep -o 'archive__item-title' _site/publications/index.html | wc -l)"
           for text in "Junteng Liu" "HKUST NLP Group" "Ph.D. in Computer Science" "B.Eng." "Shanghai Jiao Tong University" "MINIMAX" "Tencent WXG" "Shanghai AI Lab" "Zhiyuan Honor Scholarship" "Natural Language Processing" "Machine Learning" "jliugi@connect.ust.hk" "Vicent0205" "junteng88716710" "tbK9jl4AAAAJ"; do
             grep -q "$text" _site/index.html && echo "OK: $text"
           done
           echo "Leftover template content (should be empty):"
-          grep -Elo 'Your Name|GitHub University|Paper Title Number|blog-post|Skill 1' _site/index.html _site/cv/index.html _site/publications/index.html || true
-          echo "Sidebar avatar rendered (should be empty):"
+          grep -Elo 'Your Name|GitHub University|Paper Title Number|Skill 1' _site/index.html _site/cv/index.html _site/publications/index.html || true
+          echo "Sidebar avatar (should be empty):"
           grep -o 'author__avatar' _site/index.html || true
-      - name: Publish built site to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_site
-          publish_branch: gh-pages
-          force_orphan: true
+      - name: Inspect Pages configuration
+        id: pages
+        continue-on-error: true
+        uses: actions/configure-pages@v6
+      - name: Report Pages configuration
+        run: |
+          echo "Pages configuration outcome: ${{ steps.pages.outcome }}"
+          echo "Pages base path: ${{ steps.pages.outputs.base_path }}"
