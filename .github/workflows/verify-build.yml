@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -26,10 +26,20 @@ jobs:
           JEKYLL_ENV: production
       - name: Check built pages
         run: |
-          find _site -maxdepth 2 -type f | sort
-          for title in "SynLogic" "Perception Bottleneck" "Universal Truthfulness Hyperplane" "In-Context Sharpness" "C-Eval" "Composing Parameter-Efficient Modules"; do
-            grep -q "$title" _site/index.html && echo "About page lists: $title"
+          echo "Publication links on publications page:"
+          grep -o 'class="archive__item-title"' _site/publications/index.html | wc -l
+          echo "About page personal details:"
+          for text in "Junteng Liu" "HKUST NLP Group" "Ph.D. in Computer Science" "B.Eng." "Shanghai Jiao Tong University" "MINIMAX" "Tencent WXG" "Shanghai AI Lab" "Zhiyuan Honor Scholarship" "Natural Language Processing" "Machine Learning" "jliugi@connect.ust.hk" "Vicent0205" "junteng88716710" "tbK9jl4AAAAJ"; do
+            grep -q "$text" _site/index.html && echo "OK: $text"
           done
-          echo "Publication entries on publications page:"
-          grep -c 'archive__item-title' _site/publications/index.html
-          grep -o 'jliugi@connect.ust.hk' _site/index.html | head -n 1
+          echo "Leftover template content (should be empty):"
+          grep -Elo 'Your Name|GitHub University|Paper Title Number|blog-post|Skill 1' _site/index.html _site/cv/index.html _site/publications/index.html || true
+          echo "Sidebar avatar rendered (should be empty):"
+          grep -o 'author__avatar' _site/index.html || true
+      - name: Publish built site to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          force_orphan: true
